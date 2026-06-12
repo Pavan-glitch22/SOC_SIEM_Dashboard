@@ -1,130 +1,511 @@
-# 🛡️ Enterprise SOC Home Lab — Wazuh SIEM
+# 🛡️ Enterprise SOC Home Lab Using Wazuh SIEM
 
-A fully functional Security Operations Center (SOC) home lab built using **Wazuh SIEM**, **Ubuntu Server 26.04 LTS**, **Kali Linux 2026.2**, and **VirtualBox**. This project demonstrates hands-on experience in threat detection, log analysis, detection engineering, and SOC analyst workflows.
+## 📌 Project Overview
 
----
+This project documents the design and deployment of a Security Operations Center (SOC) Home Lab using Wazuh SIEM, Ubuntu Server, Kali Linux, and VirtualBox.
 
-## 📸 Preview
+The objective was to gain hands-on experience in:
 
-![Threat Hunting Dashboard](screenshots/threat_hunting_dashboard.png)
+* SIEM Deployment
+* Threat Hunting
+* Detection Engineering
+* Log Analysis
+* Security Monitoring
+* Linux Administration
+* Incident Investigation
 
----
-
-## 🧱 Lab Architecture
-
-| Component | Role | IP |
-|---|---|---|
-| Ubuntu Server 26.04 | Wazuh Manager + Dashboard + Indexer | 192.168.56.10 |
-| Kali Linux 2026.2 | Attack Simulation + Wazuh Agent | 192.168.56.20 |
-| Metasploitable 2 | Vulnerable Target | 192.168.56.30 |
-| Windows 10 | Additional Endpoint | 192.168.56.x |
-
-**Network:** NAT (internet) + Internal Network `SOC-LAB` (isolated SOC comms)
+The final environment provides centralized log collection, custom alerting, threat hunting, and endpoint monitoring capabilities.
 
 ---
 
-## ⚙️ Stack
+# 🏗️ Lab Architecture
 
-- **SIEM:** Wazuh v4.12.0 (All-in-One)
-- **OS:** Ubuntu Server 26.04 LTS / Kali GNU/Linux 2026.2
-- **Virtualisation:** Oracle VirtualBox
-- **Agent:** Wazuh Agent v4.12.0
-
----
-
-## ✅ What Was Built
-
-- [x] Deployed Wazuh All-in-One on Ubuntu Server
-- [x] Configured VirtualBox NAT + Internal Network (`SOC-LAB`)
-- [x] Enrolled Kali Linux as active Wazuh agent (`kali-attacker`)
-- [x] Wrote custom detection rules (XML)
-- [x] Simulated real attacks from Kali Linux
-- [x] Performed threat hunting via Wazuh dashboard
-- [x] Mapped detections to MITRE ATT&CK
-- [x] Monitored authentication and privilege escalation events
-- [x] Tested File Integrity Monitoring (FIM)
+```text
+                Ubuntu Server
+             (Wazuh Manager)
+               192.168.56.10
+                     |
+      --------------------------------
+      |                              |
+      |                              |
+ Kali Linux                    Metasploitable
+(Agent/Attacker)             (Target System)
+192.168.56.20                192.168.56.30
+```
 
 ---
 
-## 🔍 Detections & Alerts
+# 🖥️ Technologies Used
 
-| Rule ID | Description | Level | MITRE |
-|---|---|---|---|
-| 5402 | Successful sudo to ROOT executed | 3 | T1548.003 |
-| 5501 | PAM: Login session opened | 3 | T1078 |
-| 5502 | PAM: Login session closed | 3 | T1078 |
-| 100500 | Nmap reconnaissance Detected *(custom)* | 5 | T1046 |
-
-**Total alerts generated:** 496  
-**Level 12+ alerts:** 1  
-**Auth successes monitored:** 48
+| Technology     | Purpose                   |
+| -------------- | ------------------------- |
+| Wazuh 4.12     | SIEM Platform             |
+| Ubuntu Server  | Wazuh Manager             |
+| Kali Linux     | Attack Simulation & Agent |
+| VirtualBox     | Virtualization            |
+| Linux          | System Administration     |
+| Threat Hunting | Security Monitoring       |
 
 ---
 
-## 🧠 Custom Detection Rule — Rule 100500
+# 🎯 Project Objectives
+
+* Deploy Wazuh SIEM
+* Configure SOC Lab Network
+* Connect Endpoints
+* Perform Threat Hunting
+* Create Custom Detection Rules
+* Investigate Alerts
+* Monitor Authentication Activity
+* Implement File Integrity Monitoring
+
+---
+
+# 🌐 Network Configuration
+
+Each VM was configured with:
+
+### Adapter 1
+
+```text
+NAT
+```
+
+Purpose:
+
+* Internet Connectivity
+
+### Adapter 2
+
+```text
+Internal Network
+```
+
+Configuration:
+
+```text
+Network Name: SOC-LAB
+Promiscuous Mode: Allow All
+Virtual Cable Connected
+```
+
+Purpose:
+
+* Communication between SOC systems
+
+---
+
+# 🔧 Static IP Configuration
+
+### Ubuntu Server
+
+```bash
+sudo ip addr add 192.168.56.10/24 dev enp0s8
+sudo ip link set enp0s8 up
+```
+
+### Kali Linux
+
+```bash
+sudo ip addr add 192.168.56.20/24 dev eth1
+sudo ip link set eth1 up
+```
+
+### Metasploitable
+
+```bash
+ifconfig eth1 192.168.56.30 netmask 255.255.255.0 up
+```
+
+---
+
+# 📡 Connectivity Verification
+
+Commands Used:
+
+```bash
+ping 192.168.56.10
+ping 192.168.56.20
+ping 192.168.56.30
+```
+
+Result:
+
+✅ Successful communication between all systems.
+
+---
+
+# ⚙️ Wazuh Installation
+
+### Download Installer
+
+```bash
+curl -sO https://packages.wazuh.com/4.12/wazuh-install.sh
+```
+
+### Make Executable
+
+```bash
+chmod +x wazuh-install.sh
+```
+
+### Install Wazuh
+
+```bash
+sudo ./wazuh-install.sh -a
+```
+
+Installed Components:
+
+* Wazuh Manager
+* Wazuh Dashboard
+* Wazuh Indexer
+
+---
+
+# 🚨 Challenges Faced
+
+## Memory Requirement Error
+
+Issue:
+
+```text
+System does not meet minimum hardware requirements
+```
+
+Solution:
+
+* Increased Ubuntu RAM allocation
+
+---
+
+## Dashboard Accessibility Issue
+
+Issue:
+
+Unable to access Wazuh Dashboard.
+
+Root Cause:
+
+* Internal network configuration
+
+Solution:
+
+* Accessed dashboard from Kali browser
+
+---
+
+## Disk Utilization Issue
+
+Error:
+
+```text
+Flood-stage watermark exceeded
+```
+
+Investigation:
+
+```bash
+df -h
+lsblk
+```
+
+Root Cause:
+
+Ubuntu LVM only used approximately half of the virtual disk.
+
+Solution:
+
+```bash
+sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+
+sudo resize2fs /dev/ubuntu-vg/ubuntu-lv
+```
+
+Result:
+
+✅ Filesystem expanded successfully.
+
+---
+
+# 🛰️ Agent Deployment
+
+### Agent Installation
+
+```bash
+sudo WAZUH_MANAGER='192.168.56.10' \
+WAZUH_AGENT_NAME='kali-attacker' \
+dpkg -i wazuh-agent.deb
+```
+
+### Start Agent
+
+```bash
+sudo systemctl daemon-reload
+
+sudo systemctl enable wazuh-agent
+
+sudo systemctl start wazuh-agent
+```
+
+Verification:
+
+```bash
+sudo systemctl status wazuh-agent
+```
+
+Result:
+
+✅ Agent Active
+
+---
+
+# 🔍 Threat Hunting
+
+Threat Hunting was performed using:
+
+```text
+Threat Hunting → Discover
+```
+
+Observed Events:
+
+* PAM Login Sessions
+* Authentication Events
+* Rootcheck Alerts
+* Sudo Activity
+* System Events
+
+---
+
+# 🛠️ Custom Detection Engineering
+
+A custom Wazuh rule was created to detect reconnaissance activity.
+
+### Custom Rule
 
 ```xml
-<rule id="100500" level="5">
+<rule id="100500" level="12">
   <match>nmap</match>
-  <description>Nmap reconnaissance Detected</description>
+  <description>Nmap Reconnaissance Detected</description>
   <group>recon,custom,</group>
 </rule>
 ```
 
-Deployed at `/var/ossec/etc/rules/local_rules.xml`
-
----
-
-## 🎯 MITRE ATT&CK Coverage
-
-| Technique | ID |
-|---|---|
-| Valid Accounts | T1078 |
-| Sudo and Sudo Caching | T1548.003 |
-| Create Account | T1136 |
-| Disable or Modify Tools | T1562 |
-| Network Service Scanning | T1046 |
-
----
-
-## 🔧 Attack Simulations Run
+### Rule Deployment
 
 ```bash
-# File Integrity Monitoring
-sudo touch /etc/resume-test.txt
-echo "modified by pavan" | sudo tee -a /etc/resume-test.txt
-sudo chmod 777 /etc/resume-test.txt
-sudo rm /etc/resume-test.txt
+sudo nano /var/ossec/etc/rules/local_rules.xml
+```
 
-# Nmap Recon
-nmap -sV 192.168.56.10
+Validate:
 
-# SSH Brute Force (Hydra)
-hydra -l root -P passwords.txt ssh://192.168.56.10
+```bash
+sudo /var/ossec/bin/wazuh-analysisd -t
+```
+
+Restart:
+
+```bash
+sudo systemctl restart wazuh-manager
 ```
 
 ---
 
-## 🚧 Challenges Solved
+# 🧪 Rule Testing
 
-| Challenge | Solution |
-|---|---|
-| Wazuh installer: insufficient RAM | Increased VM RAM from 4GB → 6GB |
-| Indexer flood-stage watermark (read-only) | `lvextend` + `resize2fs` to expand LVM |
-| Dashboard inaccessible from host | Accessed via Kali browser at `https://192.168.56.10` |
-| XML syntax errors in custom rules | Validated with `wazuh-analysisd -t` before restart |
+Generated Event:
+
+```bash
+echo "nmap scan detected" | logger
+```
+
+Result:
+
+✅ Custom Alert Generated
+
+### Alert Information
+
+```text
+Rule ID: 100500
+Level: 12
+Description:
+Nmap Reconnaissance Detected
+```
 
 ---
 
-## 🚀 Future Plans
+# 📁 File Integrity Monitoring (FIM)
 
-- [ ] Enable Vulnerability Detection (CVE feeds)
-- [ ] Active Response — auto-block brute force IPs
-- [ ] Suricata IDS integration
-- [ ] Deploy agent on Metasploitable
-- [ ] Build custom dashboards (FIM, Auth, Recon)
-- [ ] SOAR integration (TheHive / Shuffle)
+Activities Performed:
+
+```bash
+sudo touch /etc/resume-test.txt
+
+echo "modified by pavan" | sudo tee -a /etc/resume-test.txt
+
+sudo chmod 777 /etc/resume-test.txt
+
+sudo rm /etc/resume-test.txt
+```
+
+Purpose:
+
+* File Creation Detection
+* File Modification Detection
+* Permission Change Detection
+* File Deletion Detection
 
 ---
 
-## 📁 Repository Structure
+# 🔐 Authentication Monitoring
+
+Observed Events:
+
+* Login Success
+* Login Sessions
+* PAM Activity
+* Root Access
+* Authentication Logs
+
+These events provide visibility into user activity across monitored endpoints.
+
+---
+
+# ⬆️ Privilege Escalation Monitoring
+
+Commands Used:
+
+```bash
+sudo whoami
+
+sudo su
+```
+
+Observed Alert:
+
+```text
+Rule ID: 5402
+
+Successful sudo to ROOT executed
+```
+
+Importance:
+
+Privilege escalation monitoring helps identify unauthorized administrative activity.
+
+---
+
+# 📚 Skills Demonstrated
+
+### SIEM
+
+* Wazuh Deployment
+* Dashboard Management
+* Agent Management
+
+### Security Operations
+
+* Alert Investigation
+* Threat Hunting
+* Event Analysis
+
+### Detection Engineering
+
+* Custom Rule Development
+* Alert Tuning
+* Rule Validation
+
+### Linux Administration
+
+* Networking
+* Service Management
+* LVM Storage Expansion
+
+---
+
+# 🚀 Future Improvements
+
+## Vulnerability Detection
+
+* CVE Monitoring
+* Package Assessment
+
+## Active Response
+
+* Automatic IP Blocking
+* Brute Force Mitigation
+
+## Suricata Integration
+
+* Network IDS
+* Port Scan Detection
+* Exploit Detection
+
+## SSH Brute Force Detection
+
+* Hydra Simulations
+* Authentication Monitoring
+
+## MITRE ATT&CK Mapping
+
+* Tactics
+* Techniques
+* Detection Coverage
+
+## Metasploitable Monitoring
+
+* Vulnerable Host Monitoring
+* Attack Simulation
+
+---
+
+# 📈 Project Outcomes
+
+Successfully built a SOC Home Lab capable of:
+
+✅ Centralized Log Collection
+
+✅ Endpoint Monitoring
+
+✅ Threat Hunting
+
+✅ Detection Engineering
+
+✅ Authentication Monitoring
+
+✅ Privilege Escalation Monitoring
+
+✅ File Integrity Monitoring
+
+✅ Alert Investigation
+
+---
+
+# 🏆 Key Takeaways
+
+This project provided hands-on experience with real-world SOC analyst workflows including:
+
+* Security Monitoring
+* Incident Investigation
+* Threat Hunting
+* SIEM Administration
+* Detection Engineering
+* Linux Security Operations
+
+The lab serves as a strong foundation for future work in Blue Team Operations, Incident Response, Threat Hunting, and Detection Engineering.
+
+---
+
+## 👨‍💻 Author
+
+**Pavan (Pa1)**
+
+Mechanical Engineering Student | Cybersecurity Enthusiast
+
+Currently focused on:
+
+* SOC Analysis
+* Threat Hunting
+* Detection Engineering
+* Blue Team Security
